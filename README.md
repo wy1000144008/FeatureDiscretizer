@@ -1,3 +1,10 @@
+# H1
+## H2
+### H3
+#### H4
+##### H5
+###### H6
+
 # Feature Discretizerの開発
 ##目的
 Feature Discretizerは最適決定木アルゴリズムODTのための特徴離散化ツールである．
