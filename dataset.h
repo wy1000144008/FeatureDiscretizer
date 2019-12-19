@@ -41,6 +41,8 @@ public:
 
   vector<pair<int, double> > data;
 
+  vector<pair<int, int> > data_binned;
+
   void push_back(int id, string token){}
 
   void push_back(int id, double token){
@@ -53,6 +55,16 @@ public:
     }
     cout << '\n';       
   }
+
+
+  void printBinnedData(){
+    for(auto iter = data_binned.begin(); iter != data_binned.end(); iter++){
+      cout<<iter->first<<" "<<iter->second<<"; ";
+    }
+    cout << '\n';       
+  }
+
+
   void sortData(){
     sort(data.begin(), data.end(), less_second<int, double>());
 
@@ -61,6 +73,37 @@ public:
     return true;
   }
 
+  vector<double> calculate_split_points(int bin_num){
+    int split_point_num=bin_num-1;
+    int bin_data_num=ceil((double)this->data.size()/bin_num);
+    printf("feature split info: num_data: %lu bin_num:%d bin_data_num:%d\n",data.size(),bin_num,bin_data_num);
+    vector<double> split_points;
+    for(int i = 1; i <= split_point_num; i++){
+      split_points.push_back(data[i*bin_data_num-1].second);
+    }
+    // assign data
+
+      int label=0;
+    for(int i = 0; i<bin_num; i++){
+      int start=i*bin_data_num; 
+      int end=(i+1)*bin_data_num;
+      if(i==bin_num-1){
+        end=data.size();
+      }
+      for(int t=start; t<end; t++){
+        data_binned.push_back(std::make_pair<int,int>(int(data[t].first),int(label)));
+      }
+      // printf("start%d end%d",start,end);
+      
+        label=label+1;
+    }
+    return split_points;
+  }
+
+  void assign_data(int bin_num, vector<double> split_points){
+    // ! label generic 
+    int label=0;
+  }
 
 
 private:
@@ -71,13 +114,12 @@ private:
 class CategoricalFeature : public Feature
 {
 public:
-  map<int, string> data;
+  vector<pair<int, string> > data;
   void push_back(int id, double token){}
   void push_back(int id, string token){
-    data[id]=token;
+    data.push_back(std::make_pair<int,string>(int(id),string(token)));
   }
   void printData(){
-
     for(auto iter = data.begin(); iter != data.end(); iter++){
       cout<<iter->first<<" "<<iter->second<<"; ";
     }
@@ -90,26 +132,20 @@ private:
 class Target : public Feature
 {
 public:
-  map<int, string> data;
+  vector<pair<int, string> > data;
   void push_back(int id, double token){
-
   }
   void push_back(int id, string token){
-    data[id]=token;
+    data.push_back(std::make_pair<int,string>(int(id),string(token)));
   }
   void printData(){
-
-    for(auto iter = data.begin(); iter != data.end(); iter++){
-      cout<<iter->first<<" "<<iter->second<<"; ";
-    }
-    cout << '\n';        
+    // for (int i=0; i<data.size(); i++) { 
+    //   cout << data[i].first << " "<< data[i].second << endl; 
+    // } 
   }
 private:
 
 };
-
-
-
 
 
 class Dataset
@@ -130,12 +166,16 @@ private:
   string delimiter;
   vector<unique_ptr<Feature>> features;
 
+
+
+
   bool is_number(const std::string& s)
   {
     char* end = 0;
     double val = strtod(s.c_str(), &end);
     return end != s.c_str() && *end == '\0' && val != HUGE_VAL;
   }
+
 
 public:
   void printInfo(){
@@ -156,18 +196,30 @@ public:
     features[i]->sortData();
     features[i]->printData();
     cout << endl;
-        // cout << typeid(features[i]).name() << '\n';
-          // cout << features[i] << '\n'; 
+          // cout << typeid(features[i]).name() << '\n';
+            // cout << features[i] << '\n'; 
   }
+}
+
+void make_bins(int bin_num){
+
+  vector<vector<double>> feature_split_points;
+  //! data format のupdate によって要修正
+  for (int i = 0; i < 4; ++i)
+  {
+    NumericFeature * child = dynamic_cast<NumericFeature*>(features[i].get());
+    vector<double> split_points = child->calculate_split_points(bin_num);
+    feature_split_points.push_back(split_points);
+    child->printBinnedData();
+  }
+
+
 }
 
 void init(){
 
   string line;
   ifstream myfile(data_path);
-
-
-      //!skipHead
   skipHead=true;
 
   int line_index=0;
@@ -185,10 +237,7 @@ void init(){
     } 
     string token;
     size_t pos = 0;
-
     int i=0;
-
-  // cout << "aaaaa " <<skipHead << endl ;
 
     while (line.length() > 0) {
 
@@ -201,15 +250,13 @@ void init(){
 
       // data format の部分を更新したあと　要修正
       if(i+1 == this->feature_num){
-
         if(i+1>features.size()){
           features.emplace_back(new Target);
         }
+        printf("%d\n",i );
         features[i]->push_back(line_index, token);
 
       }else if(is_number(token)){
-
-            // cout << is_number(token) << endl;
         if(i+1>features.size()){
           features.emplace_back(new NumericFeature);
         }
