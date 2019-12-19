@@ -23,9 +23,10 @@ TIMECMD=gtime -f 'user:%U(sec) sys:%S(sec) elapsed:%E(sec) memory:%M(B)'
 
 
 feature_discretizer.o:  feature_discretizer.cpp  feature_discretizer.h
+dataset.o:  dataset.cpp  dataset.h
 
 
-fd.exe:  feature_discretizer.o
+fd.exe:  feature_discretizer.o dataset.o
 	 g++ $(OPTIONS) feature_discretizer.o -o fd.exe
 
 
@@ -36,9 +37,14 @@ clean:
 
 cleanall: clean
 	make clean
+	-rm -f  *~  *.o 
 	-rm -f *.exe 
 	-rm -r *.dSYM;
 	-rm -f log.txt log
+
+
+remake: cleanall all
+
 
 ### EOF
 
